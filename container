@@ -1,0 +1,121 @@
+#!/bin/sh
+
+BASEPKGS="bash-completion vim ctags rxvt-unicode-terminfo"
+CONTAINER_CONFIG="${HOME}/containers"
+
+set -e
+
+AVAIL="Available commands:\n\tspawn\n\tstart\n\tstop\n\tremove\n\tlogin"
+
+if [ "$#" == "0" ]; then
+    echo "No command given."
+    echo "Usage: $0 COMMAND [PARAMS...]"
+    echo -e "${AVAIL}"
+    exit 1
+fi
+
+CMD=$1
+shift
+
+case "$CMD" in
+    spawn)
+        if [ "$#" == "0" ]; then
+            echo "No container name given."
+            echo "Usage: $0 spawn CONTAINER_NAME [ADDITIONAL_PACKAGES...]"
+            exit 1
+        fi
+
+        NAME="$1"
+        shift
+
+        FOLDER="/var/lib/machines/$NAME"
+        echo "spawning container ${NAME} in ${FOLDER}..."
+
+        sudo rm -f "$FOLDER"
+        sudo mkdir "$FOLDER"
+        sudo pacstrap -c -d "$FOLDER" base --ignore linux base-devel ${BASEPKGS} "$@"
+
+        # fix pts/0 login bug
+        sudo head -n -1 "${FOLDER}/etc/securetty" > /tmp/container_securetty
+        echo -e "pts/0\n\n# End of file" >> /tmp/container_securetty
+        sudo mv /tmp/container_securetty ${FOLDER}/etc/securetty
+
+        # copy home skeleton
+        if [ -d "${CONTAINER_CONFIG}" ]; then
+            sudo cp -rfL "${CONTAINER_CONFIG}/." "${FOLDER}/root/"
+        fi
+        sudo cp ${FOLDER}/etc/skel/.bash_* ${FOLDER}/root/
+
+        echo "finished spawning container ${NAME}."
+        exit 0
+        ;;
+    start)
+        if [ "$#" == "0" ]; then
+            echo "No container name given."
+            echo "Usage: $0 start CONTAINER_NAME"
+            exit 1
+        fi
+
+        NAME="$1"
+        shift
+
+        sudo machinectl start "$NAME"
+        echo "started container ${NAME}."
+        exit 0
+        ;;
+    stop)
+        if [ "$#" == "0" ]; then
+            echo "No container name given."
+            echo "Usage: $0 stop CONTAINER_NAME"
+            exit 1
+        fi
+
+        NAME="$1"
+        shift
+
+        sudo machinectl list | grep -q '^$1' && sudo machinectl poweroff "${NAME}"
+        sudo systemctl stop "systemd-nspawn@${NAME}.service"
+        echo "stopped container ${NAME}."
+        exit 0
+        ;;
+
+    remove)
+        if [ "$#" == "0" ]; then
+            echo "No container name given."
+            echo "Usage: $0 remove CONTAINER_NAME"
+            exit 1
+        fi
+
+        NAME="$1"
+        shift
+
+        FOLDER="/var/lib/machines/$NAME"
+        echo "removing container ${NAME} in ${FOLDER}..."
+        # stop first
+        sudo machinectl list | grep -q '^$1' && sudo machinectl poweroff "${NAME}"
+        sudo systemctl stop "systemd-nspawn@${NAME}.service"
+        sudo rm -rf "$FOLDER"
+        echo "removed container ${NAME}."
+        exit 0
+        ;;
+
+    login)
+        if [ "$#" == "0" ]; then
+            echo "No container name given."
+            echo "Usage: $0 login CONTAINER_NAME"
+            exit 1
+        fi
+
+        NAME="$1"
+        shift
+
+        echo "logging into container ${NAME}..."
+        sudo machinectl shell "${NAME}" /bin/bash
+        exit 0
+        ;;
+
+    *)
+        echo "Unknown command \"${CMD}\""
+        echo -e "${AVAIL}"
+        exit 1
+esac

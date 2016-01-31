@@ -1,0 +1,29 @@
+_container()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    if [ "${COMP_CWORD}" == "1" ]; then
+        COMPREPLY=( $(compgen -W "spawn start stop remove login" -- $cur) )
+    else
+        MACTIVE=$(machinectl list | tail -n +2 | head -n -2 | cut -d ' ' -f 1 | xargs)
+        MEXISTING=$(ls /var/lib/machines)
+        CMD="${COMP_WORDS[1]}"
+        case "$CMD" in
+            start)
+                COMPREPLY=( $(compgen -W "${MEXISTING}" -- $cur) )
+                ;;
+            stop)
+                COMPREPLY=( $(compgen -W "${MACTIVE}" -- $cur) )
+                ;;
+            remove)
+                COMPREPLY=( $(compgen -W "${MEXISTING}" -- $cur) )
+                ;;
+            login)
+                COMPREPLY=( $(compgen -W "${MACTIVE}" -- $cur) )
+                ;;
+            *)
+                COMPREPLY=""
+        esac
+    fi
+}
+
+complete -F _container container
