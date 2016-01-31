@@ -90,8 +90,8 @@ That's it. You forgot some package above, but we will fix that on the way:
 
 Awesome, your script runs with python2 and you no longer need the container. So:
 
-   container stop test_python2
-   container remove test_python2
+    container stop test_python2
+    container remove test_python2
 
 Done!
 
