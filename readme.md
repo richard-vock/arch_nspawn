@@ -65,6 +65,16 @@ Once a container is no longer required you may use the remove command followed b
 
     container remove foo
 
+#### branch
+
+The branch command is used to copy a container. It boils down to a
+
+    cp --reflink
+
+which means that if your filesystem supports copy on write (e.g. btrfs), only a reference to all files in your original container are copied and only when files are written (i.e. changed) actual copies are created.
+
+This allows for a space efficient, fast copy of containers since only deltas are actually written. In case your filesystem does not support CoW (e.g. ext2/3/4), the container directory is simply copied.
+
 ### Example Usage Scenario
 
 Consider a scenario where you have developed a small python tool to accomplish great things. Now since you are better than average (even great?) you obviously wrote it in python 3, not

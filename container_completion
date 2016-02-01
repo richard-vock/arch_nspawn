@@ -2,7 +2,7 @@ _container()
 {
     local cur=${COMP_WORDS[COMP_CWORD]}
     if [ "${COMP_CWORD}" == "1" ]; then
-        COMPREPLY=( $(compgen -W "spawn start stop remove login" -- $cur) )
+        COMPREPLY=( $(compgen -W "spawn start stop remove login branch" -- $cur) )
     else
         MACTIVE=$(machinectl list | tail -n +2 | head -n -2 | cut -d ' ' -f 1 | xargs)
         MEXISTING=$(ls /var/lib/machines)
@@ -19,6 +19,11 @@ _container()
                 ;;
             login)
                 COMPREPLY=( $(compgen -W "${MACTIVE}" -- $cur) )
+                ;;
+            branch)
+                if [ "${COMP_CWORD}" == "2" ]; then
+                    COMPREPLY=( $(compgen -W "${MEXISTING}" -- $cur) )
+                fi
                 ;;
             *)
                 COMPREPLY=""

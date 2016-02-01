@@ -5,7 +5,7 @@ CONTAINER_CONFIG="${HOME}/containers"
 
 set -e
 
-AVAIL="Available commands:\n\tspawn\n\tstart\n\tstop\n\tremove\n\tlogin"
+AVAIL="Available commands:\n\tspawn\n\tstart\n\tstop\n\tremove\n\tlogin\n\tbranch"
 
 if [ "$#" == "0" ]; then
     echo "No command given."
@@ -111,6 +111,33 @@ case "$CMD" in
 
         echo "logging into container ${NAME}..."
         sudo machinectl shell "${NAME}" /bin/bash
+        exit 0
+        ;;
+
+    branch)
+        if [ "$#" == "0" ]; then
+            echo "No source container name given."
+            echo "Usage: $0 branch SOURCE_CONTAINER_NAME TARGET_CONTAINER_NAME"
+            exit 1
+        fi
+
+        SRC="$1"
+        shift
+
+        if [ "$#" == "0" ]; then
+            echo "No target container name given."
+            echo "Usage: $0 branch SOURCE_CONTAINER_NAME TARGET_CONTAINER_NAME"
+            exit 1
+        fi
+
+        TGT="$1"
+        shift
+
+        SRC_FOLDER="/var/lib/machines/$SRC"
+        TGT_FOLDER="/var/lib/machines/$TGT"
+
+        echo "branch container ${SRC} to ${TGT}..."
+        sudo cp -af --reflink "${SRC_FOLDER}" "${TGT_FOLDER}"
         exit 0
         ;;
 
