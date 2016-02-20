@@ -92,7 +92,7 @@ case "$CMD" in
         FOLDER="/var/lib/machines/$NAME"
         echo "removing container ${NAME} in ${FOLDER}..."
         # stop first
-        sudo machinectl list | grep -q '^$1' && sudo machinectl poweroff "${NAME}"
+        sudo machinectl list | grep -q "^${1}" && sudo machinectl poweroff "${NAME}"
         sudo systemctl stop "systemd-nspawn@${NAME}.service"
         sudo rm -rf "$FOLDER"
         echo "removed container ${NAME}."
@@ -109,7 +109,11 @@ case "$CMD" in
         NAME="$1"
         shift
 
-        sudo machinectl list | grep -q '^$1' || (sudo machinectl start "$NAME" && echo "started container ${NAME}." && sleep 2)
+        if [[ ! -n `sudo machinectl list | grep "^${NAME}"` ]]; then
+            sudo machinectl start "$NAME"
+            echo "started container ${NAME}."
+            sleep 2
+        fi
         echo "logging into container ${NAME}..."
         sudo machinectl shell "${NAME}" /bin/bash
         exit 0
