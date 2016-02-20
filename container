@@ -109,6 +109,7 @@ case "$CMD" in
         NAME="$1"
         shift
 
+        sudo machinectl list | grep -q '^$1' || (sudo machinectl start "$NAME" && echo "started container ${NAME}." && sleep 2)
         echo "logging into container ${NAME}..."
         sudo machinectl shell "${NAME}" /bin/bash
         exit 0
